@@ -1,0 +1,60 @@
+version: '3.3'
+
+services:
+  influxdb:
+    image: influxdb
+    hostname: influxdb
+    volumes:
+      - influx-config:/etc/influxdb
+      - influx-data:/var/lib/influxdb
+
+  nodered:
+    image: nodered/node-red
+    hostname: nodered
+    volumes:
+      - nodered-config:/data
+    ports:
+      - 1880:1880
+
+networks:
+  default:
+    external: 
+      name: gin_network
+
+volumes:
+  influx-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/stacks/gin/volumes/influx-data
+      o: bind
+  influx-config:
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/stacks/gin/volumes/influx-config
+      o: bind
+  nodered-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/stacks/gin/volumes/nodered-data
+      o: bind
+  nodered-config:
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/stacks/gin/volumes/nodered-config
+      o: bind
+  grafana-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/stacks/gin/volumes/grafana-data
+      o: bind
+  grafana-config:
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/stacks/gin/volumes/grafana-config
+      o: bind

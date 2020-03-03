@@ -1,0 +1,9 @@
+---
+all:
+  hosts:
+    docker-host1:
+      ansible_host: 10.8.8.116
+    docker-host2:
+      ansible_host: 10.8.8.117
+    docker-host3:
+      ansible_host: 10.8.8.118

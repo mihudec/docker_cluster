@@ -1,0 +1,184 @@
+- name: Disable SE Linux
+  selinux:
+    state: disabled
+
+- name: Create LVM Group
+  lvg:
+    vg: "{{ lvm.group.name }}"
+    pvs: "{{ lvm.group.pvs }}"
+    pesize: "{{ lvm.group.pesize | default(omit) }}"
+    state: "{{ lvm.group.state | default(omit) }}"
+
+- name: Create LVM ThinPool
+  lvol:
+    vg: "{{ lvm.group.name }}"
+    thinpool: "{{ lvm.thinpool.name }}"
+    size: "{{ lvm.thinpool.size }}"
+
+- name: Create LVM Volume
+  lvol:
+    lv: "{{ lvm.volume.name }}"
+    size: "{{ lvm.volume.size }}"
+    vg: "{{ lvm.group.name }}"
+    thinpool: "{{ lvm.thinpool.name }}"
+
+- name: Create XFS Filesystem on LVM Volume
+  filesystem:
+    dev: "/dev/mapper/{{ lvm.group.name }}-{{ lvm.volume.name }}"
+    fstype: xfs
+
+- name: Create Gluster Brick Path
+  file:
+    path: "{{ gluster.brick }}"
+    state: directory
+    recurse: true
+
+- name: Mount LVM Volume as Gluster Brick
+  mount:
+    path: "{{ gluster.brick }}"
+    src: "/dev/mapper/{{ lvm.group.name }}-{{ lvm.volume.name }}"
+    fstype: xfs
+    opts: defaults
+    state: mounted
+
+- name: Create Gluster Volume Folder
+  file:
+    path: "{{ gluster.brick }}/{{ gluster.volume }}"
+    state: directory
+
+- name: Add Gluster Repository
+  copy:
+    src: glusterfs-rhel8.repo
+    dest: /etc/yum.repos.d/glusterfs-rhel8.repo
+
+- name: Install GlusterFS Server
+  dnf:
+    name: glusterfs-server
+    enablerepo: PowerTools
+    update_cache: true
+    state: latest
+  tags: install 
+
+- name: Start and Enable Gluster Daemon
+  systemd:
+    name: glusterd
+    state: started
+    enabled: true
+
+- name: Configure Firewall Zone for Docker Nodes
+  firewalld:
+    zone: internal
+    source: "{{ hostvars[item].ansible_host }}/32"
+    permanent: true
+    state: enabled
+    immediate: true
+  loop: "{{ groups['all'] | list }}"
+  tags: firewall
+
+- name: Enable GlusterFS Service in Firewall
+  firewalld:
+    zone: internal
+    service: glusterfs
+    permanent: true
+    state: enabled
+    immediate: true
+  tags: firewall
+
+- name: Enable GlusterFS Portmapper ports in Firewall
+  firewalld:
+    zone: internal
+    port: "{{ item }}"
+    permanent: true
+    state: enabled
+    immediate: true
+  loop:
+    - 111/tcp
+    - 111/udp
+  tags: firewall
+
+- name: Copy Certificates for GlusterFS
+  copy:
+    src: "{{ certs_folder | default('') }}{{ item[0] }}"
+    dest: "/etc/ssl/{{ item[1] }}"
+    mode: "{{ item[2] }}"
+  loop:
+    - ["{{ inventory_hostname }}.crt", "glusterfs.pem", "0644"]
+    - ["{{ inventory_hostname }}.pem", "glusterfs.key", "0400"]
+    - ["{{ ca_certs | first }}", "glusterfs.ca", "0644"]
+
+- name: Enable GlusterFS TLS
+  file:
+    path: /var/lib/glusterd/secure-access
+    state: touch
+
+- name: Start and Enable Gluster Daemon
+  systemd:
+    name: glusterd
+    state: restarted
+    enabled: true
+
+- name: Create GlusterFS Volume
+  gluster_volume:
+    state: present
+    name: "{{ gluster.volume }}"
+    bricks: "{{ gluster.brick }}/{{ gluster.volume }}"
+    replicas: "{{ groups['all'] | length }}"
+    options: 
+      {
+        server.ssl: 'on',
+        client.ssl: 'on',
+        auth.ssl-allow: "{{ groups['all'] | product([domain_name]) | map('join', '.') | list | join(',') }}",
+        ssl.cipher-list: 'HIGH:!SSLv2'
+      }
+    #rebalance: yes
+    cluster: "{{ groups['all'] | product([domain_name]) | map('join', '.') | list}}"
+    host: "{{ inventory_hostname }}.{{ domain_name }}"
+  run_once: true
+  tags: gluster
+
+#- name: Create Gluster MountPoint Directory
+#  file:
+#    path: /data
+#    state: directory
+
+- name: Create Systemd Mount Override Directory
+  file:
+    path: "/etc/systemd/system/srv.mount.d/"
+    state: directory
+
+- name: Copy Systemd Override File
+  copy:
+    src: override.conf
+    dest: /etc/systemd/system/srv.mount.d/override.conf
+
+- name: Copy Mount Hack File
+  copy:
+    src: glusterfsmounts.service
+    dest: /etc/systemd/system/glusterfsmounts.service
+
+#- name: Copy Enhanced Gluster UnitFile
+#  copy:
+#    src: 
+#    dest:
+
+- name: Reload Daemon and Enable Hack
+  systemd:
+    name: glusterfsmounts
+    state: started
+    daemon_reload: true
+    enabled: true
+
+- name: Mount GlusterFS
+  mount:
+    path: "{{ gluster.mount }}"
+    src: "{{ inventory_hostname }}.{{ domain_name }}:/{{ gluster.volume }}"
+    fstype: glusterfs
+    opts: defaults,_netdev
+    state: mounted
+
+- name: Get Other Nodes
+  debug: 
+    msg: "{{ groups['all'] | product([domain_name]) | map('join', '.') | list | join(',') }}"
+  tags: debug
+
+  

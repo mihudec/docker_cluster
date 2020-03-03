@@ -1,0 +1,5 @@
+---
+roles:
+  master: true
+  manager: true
+  worker: true

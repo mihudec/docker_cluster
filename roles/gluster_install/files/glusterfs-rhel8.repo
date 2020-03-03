@@ -1,0 +1,26 @@
+# Place this file in your /etc/yum.repos.d/ directory
+
+[glusterfs-rhel8]
+name=GlusterFS is a clustered file-system capable of scaling to several petabytes.
+baseurl=https://download.gluster.org/pub/gluster/glusterfs/6/LATEST/RHEL/el-$releasever/$basearch/
+enabled=1
+skip_if_unavailable=1
+gpgcheck=1
+gpgkey=https://download.gluster.org/pub/gluster/glusterfs/6/rsa.pub
+
+[glusterfs-noarch-rhel8]
+name=GlusterFS is a clustered file-system capable of scaling to several petabytes.
+baseurl=https://download.gluster.org/pub/gluster/glusterfs/6/LATEST/RHEL/el-$releasever/noarch
+enabled=1
+skip_if_unavailable=1
+gpgcheck=1
+gpgkey=https://download.gluster.org/pub/gluster/glusterfs/6/rsa.pub
+
+[glusterfs-source-rhel8]
+[glusterfs-source-rhel8]
+name=GlusterFS is a clustered file-system capable of scaling to several petabytes. - Source
+baseurl=https://download.gluster.org/pub/gluster/glusterfs/6/LATEST/RHEL/el-$releasever/SRPMS
+enabled=0
+skip_if_unavailable=1
+gpgcheck=1
+gpgkey=https://download.gluster.org/pub/gluster/glusterfs/6/rsa.pub

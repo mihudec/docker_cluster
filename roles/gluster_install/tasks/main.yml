@@ -1,0 +1,21 @@
+---
+- name: Add Gluster Repository
+  copy:
+    src: glusterfs-rhel8.repo
+    dest: /etc/yum.repos.d/glusterfs-rhel8.repo
+
+- name: Install GlusterFS Server
+  dnf:
+    name: 
+      - glusterfs-server
+      - glusterfs-client
+    enablerepo: PowerTools
+    state: latest
+  tags: install 
+
+- name: Start and Enable Gluster Daemon
+  systemd:
+    name: glusterd
+    state: started
+    enabled: true
+  tags: restart

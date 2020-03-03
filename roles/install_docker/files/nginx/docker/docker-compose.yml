@@ -1,0 +1,38 @@
+version: '3.3'
+
+services:
+  nginx:
+    image: nginx
+    hostname: nginx
+    volumes:
+      - config:/etc/nginx
+      - certs:/etc/ssl/private
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - swarmpit_network
+      - chirpstack_network
+
+
+networks:
+  swarmpit_network:
+    external: 
+      name: swarmpit_network
+  chirpstack_network:
+    external: 
+      name: chirpstack_network
+
+volumes:
+  config:
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/stacks/nginx/volumes/config
+      o: bind
+  certs:
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/stacks/nginx/volumes/certs
+      o: bind

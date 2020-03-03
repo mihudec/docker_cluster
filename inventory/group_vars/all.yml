@@ -1,0 +1,77 @@
+---
+ansible_user: root
+domain_name: alef.demo
+certs_folder: "~/certs/docker/"
+ca_certs:
+  - ALEF_DEMO_CA.crt
+lvm:
+  group:
+    name: cluster.vg
+    pvs: /dev/sdb
+    pesize: 32M
+    state: present
+  thinpool: 
+    name: cluster.tp
+    size: 90%VG
+  volume:
+    name: cluster.vol
+    size: 50G
+gluster:
+  brick: /bricks/cluster
+  volume: gv0
+  mount: /data
+
+docker:
+  default_addr_pool: 
+    - 172.30.0.0/16
+  subnet_size: 24
+  networks:
+    - name: swarmpit_network
+      driver: overlay
+      scope: swarm
+      attachable: true
+      enable_ipv6: false
+      state: present
+      ipam_config:
+        - subnet: 172.30.1.0/24
+          gateway: 172.30.1.1
+    - name: chirpstack_network
+      driver: overlay
+      scope: swarm
+      attachable: true
+      enable_ipv6: false
+      state: present
+      ipam_config:
+        - subnet: 172.30.2.0/24
+          gateway: 172.30.2.1
+    - name: gin_network
+      driver: overlay
+      scope: swarm
+      attachable: true
+      enable_ipv6: false
+      state: present
+      ipam_config:
+        - subnet: 172.30.3.0/24
+          gateway: 172.30.3.1
+  stacks:
+    - name: swarmpit
+      config: false
+      volumes:
+        - db-data
+        - influx-data
+    - name: nginx
+      config: true
+      volumes:
+        - config
+        - certs
+    - name: gin
+      config: false
+      volumes:
+        - influx-data
+        - influx-config
+        - nodered-data
+        - nodered-config
+        - grafana-data
+        - grafana-config
+
+  
