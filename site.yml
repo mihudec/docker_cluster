@@ -1,5 +1,5 @@
-- hosts: all
+- hosts: swarm
   roles:
-    #- common
-    - install_docker
-    #- lvm
+    - common
+    - lvm
+    #- install_docker

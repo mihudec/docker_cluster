@@ -11,7 +11,7 @@
 - name: Copy CA Certificates
   copy:
     src: "{{ certs_folder | default('') }}{{ item }}"
-    dest: "/etc/pki/ca-trust/source/anchors/{{ item }}"
+    dest: "/usr/local/share/ca-certificates/{{ item }}"
     owner: root
     group: root
     mode: "0644"
@@ -20,26 +20,14 @@
 
 - name: Update CA TrustStore
   command:
-    cmd: update-ca-trust extract
+    cmd: update-ca-certificates --fresh
   when:
     - ca_status.changed
-#- name: Create Directories
-#  file:
-#    path: "{{ item }}"
-#    state: directory
-#  loop:
-#    - "/data"
-#    - "/etc/systemd/system/srv.mount.d/"
-#
-#- name: Copy Magic File
-#  copy:
-#    src: magic
-#    dest: /etc/systemd/system/srv.mount.d/override.conf
-#
-#- name: Mount GlusterFS
-#  mount:
-#    path: /data
-#    src: "localhost:/gluster_volume1"
-#    fstype: glusterfs
-#    opts: defaults,_netdev
-#    state: present
+
+- name: Install Required Packages
+  package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - python3-apt
+    - python3-pip

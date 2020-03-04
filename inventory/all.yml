@@ -7,3 +7,5 @@ all:
       ansible_host: 10.8.8.117
     docker-host3:
       ansible_host: 10.8.8.118
+  children:
+    swarm:

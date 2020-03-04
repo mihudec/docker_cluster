@@ -1,0 +1,8 @@
+---
+swarm:
+  hosts:
+    swarm-00:
+      ansible_host: 10.8.8.115
+    swarm-01:
+    swarm-02:
+    swarm-03:

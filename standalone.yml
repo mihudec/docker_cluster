@@ -1,0 +1,6 @@
+---
+- hosts: swarm-00
+  roles:
+    - common
+    #- lvm
+    - install_docker

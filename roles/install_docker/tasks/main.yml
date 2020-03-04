@@ -1,19 +1,13 @@
 ---
-- name: Add Docker-CE Repository
-  copy:
-    src: docker-ce.repo
-    dest: /etc/yum.repos.d/docker-ce.repo
-
-- name: Install Docker-CE Server
-  dnf:
-    name: docker-ce-3:18.09.1-3.el7
-    update_cache: true
-    state: latest
+- name: Install DockerIO
+  package:
+    name: docker.io
+    state: present
   tags: install 
 
 - name: Install Docker Python Requirements
   pip:
-    name: docker
+    name: "{{ item }}"
     executable: pip3 
     state: latest 
   loop:
@@ -33,45 +27,20 @@
 - name: Copy CA Certificate for Docker
   copy:
     src: "{{ certs_folder | default('') }}{{ ca_certs | first }}"
-    dest: "/etc/pki/ca-trust/source/anchors/{{ ca_certs | first }}"
+    dest: "/usr/local/share/ca-certificates/{{ ca_certs | first }}"
     mode: "0644"
 
-- name: Copy Private Key for Docker
-  copy:
-    src: "{{ certs_folder | default('') }}{{ inventory_hostname }}.pem"
-    dest: "/etc/pki/tls/private/{{ inventory_hostname }}.pem"
-    mode: "0400"
+# - name: Copy Private Key for Docker
+#   copy:
+#     src: "{{ certs_folder | default('') }}{{ inventory_hostname }}.pem"
+#     dest: "/etc/pki/tls/private/{{ inventory_hostname }}.pem"
+#     mode: "0400"
 
-- name: Copy Certificate for Docker
-  copy:
-    src: "{{ certs_folder | default('') }}{{ inventory_hostname }}.crt"
-    dest: "/etc/pki/tls/certs/{{ inventory_hostname }}.crt"
-    mode: "0644"
-
-- name: Copy Private Key for Docker
-  copy:
-    src: "{{ certs_folder | default('') }}{{ inventory_hostname }}.pem"
-    dest: "/etc/pki/tls/private/{{ inventory_hostname }}.pem"
-    mode: "0400"
-
-- name: Configure Firewall Zone for Docker Nodes
-  firewalld:
-    zone: internal
-    source: "{{ hostvars[item].ansible_host }}/32"
-    permanent: true
-    state: enabled
-    immediate: true
-  loop: "{{ groups['all'] | list }}"
-  tags: firewall
-
-- name: Enable Docker Swarm Service in Firewall
-  firewalld:
-    zone: internal
-    service: docker-swarm
-    permanent: true
-    state: enabled
-    immediate: true
-  tags: firewall
+# - name: Copy Certificate for Docker
+#   copy:
+#     src: "{{ certs_folder | default('') }}{{ inventory_hostname }}.crt"
+#     dest: "/etc/pki/tls/certs/{{ inventory_hostname }}.crt"
+#     mode: "0644"
 
 - name: Init Docker Swarm
   docker_swarm:
@@ -80,12 +49,6 @@
     advertise_addr: "{{ ansible_host }}:2377"
     default_addr_pool: "{{ docker.default_addr_pool }}"
     subnet_size: "{{ docker.subnet_size }}"
-    #name: Swarm-01
-    #tls: true
-    #ssl_version: 3
-#    client_cert: "/etc/pki/tls/certs/{{ inventory_hostname }}.crt"
-#    client_key: "/etc/pki/tls/private/{{ inventory_hostname }}.pem"
-#    ca_cert: "/etc/pki/ca-trust/source/anchors/{{ ca_certs | first }}"
   when:
     - roles.master is defined 
     - roles.master
