@@ -15,6 +15,11 @@ services:
       - nodered-config:/data
     ports:
       - 1880:1880
+    extra_hosts:
+      - nodered.docker.demo:127.0.0.1
+    dns:
+      - 10.8.8.120
+
 
 networks:
   default:

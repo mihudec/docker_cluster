@@ -13,6 +13,7 @@ services:
     networks:
       - swarmpit_network
       - chirpstack_network
+      - gin_network
 
 
 networks:
@@ -22,6 +23,9 @@ networks:
   chirpstack_network:
     external: 
       name: chirpstack_network
+  gin_network:
+    external:
+      name: gin_network
 
 volumes:
   config:

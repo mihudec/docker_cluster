@@ -192,6 +192,7 @@
     name: "{{ item.name }}"
     compose: 
       - "{{ gluster.mount }}/stacks/{{ item.name }}/docker/docker-compose.yml"
+    state: present
   loop: "{{ docker.stacks }}"
   loop_control:
     label: "{{ item.name }}"
